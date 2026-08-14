@@ -1,5 +1,5 @@
 {
-  "name": "Zoya AI",
+  "name": "MeMax",
   "description": "A real-time voice-to-voice AI assistant.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

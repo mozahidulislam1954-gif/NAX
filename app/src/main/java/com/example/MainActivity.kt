@@ -112,7 +112,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = Color(0xFFE0E5EC)
                 ) {
-                    ZoyaScreen(
+                    MeMaxScreen(
                         state = uiState,
                         onToggle = {
                             if (recordAudioPermission.status.isGranted) {
@@ -158,7 +158,7 @@ fun openApp(context: Context, appName: String) {
 }
 
 @Composable
-fun ZoyaScreen(state: LiveAudioSession.State, onToggle: () -> Unit) {
+fun MeMaxScreen(state: LiveAudioSession.State, onToggle: () -> Unit) {
     val neumorphicBgColor = Color(0xFFE0E5EC)
     
     Box(
@@ -185,7 +185,7 @@ fun ZoyaScreen(state: LiveAudioSession.State, onToggle: () -> Unit) {
                     )
                     Row {
                         Text(
-                            text = "Zoya ",
+                            text = "MeMax ",
                             color = Color(0xFF333333),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Light
@@ -283,8 +283,8 @@ fun ZoyaScreen(state: LiveAudioSession.State, onToggle: () -> Unit) {
                 val statusText = when (state) {
                     LiveAudioSession.State.DISCONNECTED -> "SYSTEM OFFLINE"
                     LiveAudioSession.State.CONNECTING -> "CONNECTING..."
-                    LiveAudioSession.State.LISTENING -> "ZOYA IS LISTENING"
-                    LiveAudioSession.State.SPEAKING -> "ZOYA IS SPEAKING"
+                    LiveAudioSession.State.LISTENING -> "MEMAX IS LISTENING"
+                    LiveAudioSession.State.SPEAKING -> "MEMAX IS SPEAKING"
                 }
 
                 Text(
@@ -338,7 +338,7 @@ fun ZoyaScreen(state: LiveAudioSession.State, onToggle: () -> Unit) {
                     ) {
                         Icon(
                             imageVector = if (state == LiveAudioSession.State.DISCONNECTED) Icons.Default.Mic else Icons.Default.Stop,
-                            contentDescription = "Toggle Zoya",
+                            contentDescription = "Toggle MeMax",
                             tint = if (state == LiveAudioSession.State.DISCONNECTED) Color(0xFF666666) else Color(0xFFEC4899),
                             modifier = Modifier.size(36.dp)
                         )

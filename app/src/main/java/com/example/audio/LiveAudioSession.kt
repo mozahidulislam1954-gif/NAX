@@ -42,7 +42,7 @@ class LiveAudioSession(
                         }
                         putJsonObject("systemInstruction") {
                             putJsonArray("parts") {
-                                addJsonObject { put("text", "You are Zoya, a sassy female AI assistant. If the user asks to open an app (e.g., YouTube, Camera, Maps), you MUST call the 'open_app' tool immediately.") }
+                                addJsonObject { put("text", "You are MeMax, a highly capable, serious, and professional AI assistant. Your primary goal is to assist the user efficiently and reliably. Complete any task given to you directly without unnecessary banter. If the user asks to open an app (e.g., YouTube, Camera, Maps), you MUST call the 'open_app' tool immediately.") }
                             }
                         }
                         putJsonArray("tools") {
