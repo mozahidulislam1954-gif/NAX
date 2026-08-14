@@ -108,6 +108,12 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                LaunchedEffect(Unit) {
+                    viewModel.errorEvent.collect { errorMsg ->
+                        Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show()
+                    }
+                }
+
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = Color(0xFFE0E5EC)
@@ -210,7 +216,7 @@ fun MeMaxScreen(state: LiveAudioSession.State, onToggle: () -> Unit) {
                         modifier = Modifier
                             .size(12.dp)
                             .background(
-                                color = if (state != LiveAudioSession.State.DISCONNECTED) Color(0xFFEC4899) else Color(0xFFA3B1C6),
+                                color = if (state != LiveAudioSession.State.DISCONNECTED && state != LiveAudioSession.State.ERROR) Color(0xFFEC4899) else Color(0xFFA3B1C6),
                                 shape = CircleShape
                             )
                     )
@@ -274,7 +280,7 @@ fun MeMaxScreen(state: LiveAudioSession.State, onToggle: () -> Unit) {
                             modifier = Modifier
                                 .fillMaxSize()
                                 .clip(CircleShape)
-                                .rotate(if (state != LiveAudioSession.State.DISCONNECTED) rotationAnim else 0f)
+                                .rotate(if (state != LiveAudioSession.State.DISCONNECTED && state != LiveAudioSession.State.ERROR) rotationAnim else 0f)
                                 .scale(if (state == LiveAudioSession.State.SPEAKING) pulseScale else 1f)
                         )
                     }
@@ -282,6 +288,7 @@ fun MeMaxScreen(state: LiveAudioSession.State, onToggle: () -> Unit) {
 
                 val statusText = when (state) {
                     LiveAudioSession.State.DISCONNECTED -> "SYSTEM OFFLINE"
+                    LiveAudioSession.State.ERROR -> "SYSTEM ERROR"
                     LiveAudioSession.State.CONNECTING -> "CONNECTING..."
                     LiveAudioSession.State.LISTENING -> "MEMAX IS LISTENING"
                     LiveAudioSession.State.SPEAKING -> "MEMAX IS SPEAKING"
@@ -329,17 +336,18 @@ fun MeMaxScreen(state: LiveAudioSession.State, onToggle: () -> Unit) {
                     // Main Toggle Button
                     val mainInteractionSource = remember { MutableInteractionSource() }
                     val mainPressed by mainInteractionSource.collectIsPressedAsState()
+                    val isInactive = state == LiveAudioSession.State.DISCONNECTED || state == LiveAudioSession.State.ERROR
                     Box(
                         modifier = Modifier
                             .size(96.dp)
-                            .neumorphicCircle(backgroundColor = neumorphicBgColor, isPressed = mainPressed || state != LiveAudioSession.State.DISCONNECTED, shadowRadius = 10.dp, offsetX = 8.dp, offsetY = 8.dp)
+                            .neumorphicCircle(backgroundColor = neumorphicBgColor, isPressed = mainPressed || !isInactive, shadowRadius = 10.dp, offsetX = 8.dp, offsetY = 8.dp)
                             .clickable(interactionSource = mainInteractionSource, indication = null) { onToggle() },
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = if (state == LiveAudioSession.State.DISCONNECTED) Icons.Default.Mic else Icons.Default.Stop,
+                            imageVector = if (isInactive) Icons.Default.Mic else Icons.Default.Stop,
                             contentDescription = "Toggle MeMax",
-                            tint = if (state == LiveAudioSession.State.DISCONNECTED) Color(0xFF666666) else Color(0xFFEC4899),
+                            tint = if (isInactive) Color(0xFF666666) else Color(0xFFEC4899),
                             modifier = Modifier.size(36.dp)
                         )
                     }

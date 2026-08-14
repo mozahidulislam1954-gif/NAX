@@ -9,14 +9,15 @@ class LiveAudioSession(
     private val apiKey: String,
     private val onStateChange: (State) -> Unit,
     private val onAudioReceived: (ByteArray) -> Unit,
-    private val onAppAction: (String) -> Unit
+    private val onAppAction: (String) -> Unit,
+    private val onError: (String) -> Unit
 ) {
     private var webSocket: WebSocket? = null
     private val client = OkHttpClient.Builder()
         .readTimeout(0, TimeUnit.MILLISECONDS)
         .build()
 
-    enum class State { DISCONNECTED, CONNECTING, LISTENING, SPEAKING }
+    enum class State { DISCONNECTED, CONNECTING, LISTENING, SPEAKING, ERROR }
 
     fun connect() {
         onStateChange(State.CONNECTING)
@@ -140,8 +141,15 @@ class LiveAudioSession(
                 android.util.Log.e("LiveAudioSession", "WebSocket Failure: ${t.message}", t)
                 response?.let {
                     android.util.Log.e("LiveAudioSession", "Response: ${it.code} ${it.message} ${it.body?.string()}")
+                    if (it.code == 400 || it.code == 401 || it.code == 403) {
+                        onError("Invalid API Key! Please add a valid GEMINI_API_KEY in the Secrets panel.")
+                    } else {
+                        onError("Connection Error: ${it.message}")
+                    }
+                } ?: run {
+                    onError("Network Error: ${t.message}")
                 }
-                onStateChange(State.DISCONNECTED)
+                onStateChange(State.ERROR)
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {

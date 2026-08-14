@@ -21,12 +21,21 @@ class ZoyaViewModel : ViewModel() {
     private val _appLaunchEvent = MutableSharedFlow<String>()
     val appLaunchEvent = _appLaunchEvent.asSharedFlow()
 
+    private val _errorEvent = MutableSharedFlow<String>()
+    val errorEvent = _errorEvent.asSharedFlow()
+
     private var liveSession: LiveAudioSession? = null
     private var audioRecorder: AudioRecorder? = null
     private var audioPlayer: AudioPlayer? = null
 
     fun toggleConnection() {
-        if (_uiState.value == LiveAudioSession.State.DISCONNECTED) {
+        if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") {
+            viewModelScope.launch {
+                _errorEvent.emit("Missing GEMINI_API_KEY! Please add it in the Secrets panel on the left.")
+            }
+            return
+        }
+        if (_uiState.value == LiveAudioSession.State.DISCONNECTED || _uiState.value == LiveAudioSession.State.ERROR) {
             connect()
         } else {
             disconnect()
@@ -43,7 +52,7 @@ class ZoyaViewModel : ViewModel() {
             apiKey = apiKey,
             onStateChange = { state ->
                 _uiState.value = state
-                if (state == LiveAudioSession.State.DISCONNECTED) {
+                if (state == LiveAudioSession.State.DISCONNECTED || state == LiveAudioSession.State.ERROR) {
                     cleanup()
                 }
             },
@@ -53,6 +62,11 @@ class ZoyaViewModel : ViewModel() {
             onAppAction = { appName ->
                 viewModelScope.launch {
                     _appLaunchEvent.emit(appName)
+                }
+            },
+            onError = { errorMsg ->
+                viewModelScope.launch {
+                    _errorEvent.emit(errorMsg)
                 }
             }
         ).apply { connect() }
