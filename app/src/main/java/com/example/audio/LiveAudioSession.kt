@@ -68,6 +68,23 @@ class LiveAudioSession(
                     }
                 }
                 webSocket.send(setup.toString())
+                
+                val initialMessage = buildJsonObject {
+                    putJsonObject("clientContent") {
+                        putJsonArray("turns") {
+                            addJsonObject {
+                                put("role", "user")
+                                putJsonArray("parts") {
+                                    addJsonObject {
+                                        put("text", "Hello! Please greet me briefly and tell me you are ready.")
+                                    }
+                                }
+                            }
+                        }
+                        put("turnComplete", true)
+                    }
+                }
+                webSocket.send(initialMessage.toString())
             }
 
             override fun onMessage(webSocket: WebSocket, text: String) {
