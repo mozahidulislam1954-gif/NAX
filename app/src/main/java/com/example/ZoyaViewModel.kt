@@ -4,15 +4,22 @@ import androidx.lifecycle.ViewModel
 import com.example.audio.AudioPlayer
 import com.example.audio.AudioRecorder
 import com.example.audio.LiveAudioSession
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import androidx.lifecycle.viewModelScope
 
 class ZoyaViewModel : ViewModel() {
     private val apiKey = BuildConfig.GEMINI_API_KEY
 
     private val _uiState = MutableStateFlow(LiveAudioSession.State.DISCONNECTED)
     val uiState: StateFlow<LiveAudioSession.State> = _uiState.asStateFlow()
+
+    private val _appLaunchEvent = MutableSharedFlow<String>()
+    val appLaunchEvent = _appLaunchEvent.asSharedFlow()
 
     private var liveSession: LiveAudioSession? = null
     private var audioRecorder: AudioRecorder? = null
@@ -42,6 +49,11 @@ class ZoyaViewModel : ViewModel() {
             },
             onAudioReceived = { bytes ->
                 audioPlayer?.playChunk(bytes)
+            },
+            onAppAction = { appName ->
+                viewModelScope.launch {
+                    _appLaunchEvent.emit(appName)
+                }
             }
         ).apply { connect() }
     }

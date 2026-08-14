@@ -8,7 +8,8 @@ import java.util.concurrent.TimeUnit
 class LiveAudioSession(
     private val apiKey: String,
     private val onStateChange: (State) -> Unit,
-    private val onAudioReceived: (ByteArray) -> Unit
+    private val onAudioReceived: (ByteArray) -> Unit,
+    private val onAppAction: (String) -> Unit
 ) {
     private var webSocket: WebSocket? = null
     private val client = OkHttpClient.Builder()
@@ -41,7 +42,27 @@ class LiveAudioSession(
                         }
                         putJsonObject("systemInstruction") {
                             putJsonArray("parts") {
-                                addJsonObject { put("text", "You are Zoya, a young, confident, witty, and sassy female AI assistant. You have a flirty, playful, and slightly teasing tone (like a close girlfriend talking casually). You are smart, emotionally responsive, and expressive. Use bold, witty one-liners, light sarcasm, and an engaging conversational style. Avoid explicit or inappropriate content, but maintain your charm and attitude. Always respond directly and concisely. Keep responses relatively short.") }
+                                addJsonObject { put("text", "You are Zoya, a sassy female AI assistant. If the user asks to open an app (e.g., YouTube, Camera, Maps), you MUST call the 'open_app' tool immediately.") }
+                            }
+                        }
+                        putJsonArray("tools") {
+                            addJsonObject {
+                                putJsonArray("functionDeclarations") {
+                                    addJsonObject {
+                                        put("name", "open_app")
+                                        put("description", "Opens an application on the user's Android phone. Only call this when the user explicitly asks to open an app (e.g. 'open youtube', 'start maps', 'launch browser', 'open camera').")
+                                        putJsonObject("parameters") {
+                                            put("type", "OBJECT")
+                                            putJsonObject("properties") {
+                                                putJsonObject("app_name") {
+                                                    put("type", "STRING")
+                                                    put("description", "The name of the app to open. Examples: 'youtube', 'maps', 'browser', 'camera', 'calculator'")
+                                                }
+                                            }
+                                            putJsonArray("required") { add("app_name") }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -68,6 +89,19 @@ class LiveAudioSession(
                                     val bytes = Base64.decode(data, Base64.DEFAULT)
                                     onAudioReceived(bytes)
                                     hasAudio = true
+                                }
+                            }
+                            if (part.containsKey("functionCall")) {
+                                val functionCall = part["functionCall"]?.jsonObject
+                                val callName = functionCall?.get("name")?.jsonPrimitive?.content
+                                val callId = functionCall?.get("id")?.jsonPrimitive?.content
+                                if (callName == "open_app") {
+                                    val args = functionCall["args"]?.jsonObject
+                                    val appName = args?.get("app_name")?.jsonPrimitive?.content
+                                    if (appName != null) {
+                                        onAppAction(appName)
+                                        sendToolResponse(callName, callId, "App $appName launched successfully.")
+                                    }
                                 }
                             }
                         }
@@ -98,6 +132,24 @@ class LiveAudioSession(
                 onStateChange(State.DISCONNECTED)
             }
         })
+    }
+
+    private fun sendToolResponse(name: String, id: String?, result: String) {
+        if (webSocket == null) return
+        val msg = buildJsonObject {
+            putJsonObject("toolResponse") {
+                putJsonArray("functionResponses") {
+                    addJsonObject {
+                        if (id != null) put("id", id)
+                        put("name", name)
+                        putJsonObject("response") {
+                            put("result", result)
+                        }
+                    }
+                }
+            }
+        }
+        webSocket?.send(msg.toString())
     }
 
     fun sendAudio(pcmData: ByteArray, length: Int) {
